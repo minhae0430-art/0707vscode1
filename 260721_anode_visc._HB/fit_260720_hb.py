@@ -67,13 +67,14 @@ def load_and_average(path, rtol=2e-3):
 
     gamma = np.array([np.mean([p[0] for p in c]) for c in clusters], dtype=float)
     tau = np.array([np.mean([p[1] for p in c]) for c in clusters], dtype=float)
+    tau_err = np.array([np.std([p[1] for p in c], ddof=0) for c in clusters], dtype=float)
 
     order = np.argsort(gamma)
-    return gamma[order], tau[order]
+    return gamma[order], tau[order], tau_err[order]
 
 
 def fit_hb(path):
-    gamma, tau = load_and_average(path)
+    gamma, tau, tau_err = load_and_average(path)
 
     def relative_squared_error_sum(params):
         tau_y, k, n = params
@@ -115,14 +116,28 @@ def fit_hb(path):
     y_fit = herschel_bulkley(x_fit, tau_y_fit, k_fit, n_fit)
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    # plot averaged data only
-    ax.loglog(gamma, tau, 'o', color='tab:blue', label='data', markersize=7, markeredgewidth=0.6, markeredgecolor='white', zorder=4)
+    # plot averaged data only with error bars
+    ax.errorbar(
+        gamma,
+        tau,
+        yerr=tau_err,
+        fmt='o',
+        color='tab:blue',
+        label='data',
+        markersize=7,
+        markeredgewidth=0.6,
+        markeredgecolor='white',
+        elinewidth=1.2,
+        capsize=3,
+        capthick=1.0,
+        zorder=4,
+    )
     ax.loglog(x_fit, y_fit, '-', color='tab:red', label='model', zorder=3)
     ax.set_title('260720_graphite_HB_Fitting')
     ax.set_xlabel('shear rate (1/s)')
     ax.set_ylabel('shear stress (Pa)')
     ax.legend()
-    ax.grid(True, which='both', linestyle='--', alpha=0.3)
+    ax.grid(False)
     ax.tick_params(axis='both', which='major', direction='in', top=True, right=True)
     ax.tick_params(axis='both', which='minor', direction='in', top=True, right=True)
 
